@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhatsApp File Sender</title>
+  </head>
+  <body>
+    <h1>Send Message or File via WhatsApp</h1>
+
+    <!-- QR Code Display -->
+    <div id="qr-code" style="display: none">
+      <h3>Scan the QR Code to Log In</h3>
+      <img id="qr-img" src="" alt="QR Code" />
+    </div>
+
+    <!-- Form to Send Message or File -->
+    <div id="send-message-form" style="display: none">
+      <form id="messageForm" enctype="multipart/form-data">
+        <label for="number">WhatsApp Number:</label>
+        <input
+          type="text"
+          id="number"
+          name="number"
+          required
+          placeholder="e.g. 1234567890"
+        />
+
+        <label for="message">Message:</label>
+        <textarea id="message" name="message"></textarea>
+
+        <label for="file">Attach a file (optional):</label>
+        <input type="file" id="file" name="file" />
+
+        <button type="submit">Send</button>
+      </form>
+    </div>
+
+    <script>
+      // Fetch status and handle form display
+      async function checkStatus() {
+        const response = await fetch("http://localhost:3500/api/check-status");
+        const data = await response.json();
+
+        if (data.status === "not_logged_in") {
+          document.getElementById("qr-img").src = data.qr;
+          document.getElementById("qr-code").style.display = "block";
+        } else if (data.status === "logged_in") {
+          document.getElementById("send-message-form").style.display = "block";
+        }
+      }
+
+      // Call checkStatus on page load
+      window.onload = checkStatus;
+
+      // Handle form submission for sending message or file
+      document
+        .getElementById("messageForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const formData = new FormData();
+          const number = document.getElementById("number").value;
+          const message = document.getElementById("message").value;
+          const file = document.getElementById("file").files[0];
+
+          formData.append("number", number);
+          formData.append("message", message);
+          if (file) {
+            formData.append("file", file);
+          }
+
+          const response = await fetch(
+            "http://localhost:3500/api/send-message",
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+          const result = await response.json();
+          alert(result.success ? "Message sent!" : "Failed to send message.");
+        });
+    </script>
+  </body>
+</html>
